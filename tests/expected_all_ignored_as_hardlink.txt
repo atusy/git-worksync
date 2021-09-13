@@ -1,0 +1,11 @@
+./.gitignore
+./ignored-dir/foo-dir/bar-file
+./ignored-dir/foo-file
+./ignored-file
+./tracked-dir/foo-file
+./tracked-dir/ignored-dir/foo-file
+./tracked-dir/ignored-file
+./tracked-dir/untracked-file
+./untracked-dir/foo-dir/bar-file
+./untracked-dir/foo-file
+./untracked-file

@@ -1,0 +1,4 @@
+./.gitignore
+./ignored-file
+./tracked-dir/foo-file
+./tracked-dir/untracked-file
