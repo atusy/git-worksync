@@ -182,6 +182,10 @@ function match_strategy() {
   esac
 }
 
+function Yq() {
+  command yq "$@" -r 2> /dev/null || true
+}
+
 CONFIG_FILE="$(
   if [[ ! "$WORKSYNC_CONFIG" == "" ]]
   then
@@ -222,25 +226,25 @@ done
 
 if [[ ! "$CONFIG_FILE" == "" ]]
 then
-  if [[ "$#WORKTREE_SYNC_UNTRACKED" -eq 0 ]]
+  if [[ "${#WORKTREE_SYNC_UNTRACKED}" -eq 0 ]]
   then
-    WORKTREE_SYNC_UNTRACKED="$( command yq ".untracked" "$CONFIG_FILE" -r )"
+    WORKTREE_SYNC_UNTRACKED="$( Yq ".untracked" "$CONFIG_FILE" )"
   fi 
-  if [[ "$#WORKTREE_SYNC_IGNORED" -eq 0 ]]
+  if [[ "${#WORKTREE_SYNC_IGNORED}" -eq 0 ]]
   then
-    WORKTREE_SYNC_IGNORED="$( command yq ".ignored" "$CONFIG_FILE" -r )"
+    WORKTREE_SYNC_IGNORED="$( Yq ".ignored" "$CONFIG_FILE" )"
   fi 
-  if [[ "$#AS_HARD_LINK" -eq 0 ]]
+  if [[ "${#AS_HARD_LINK}" -eq 0 ]]
   then
-    AS_HARD_LINK="$( command yq ".hard-link[]" "$CONFIG_FILE" -r )"
+    AS_HARD_LINK="$( Yq .\"hard-link\"[] "$CONFIG_FILE" )"
   fi
-  if [[ "$#AS_HARD_LINK" -eq 0 ]]
+  if [[ "${#AS_SYMBOLIC_LINK}" -eq 0 ]]
   then
-    AS_SYMBOLIC_LINK="$( command yq ".symbolic-link[]" "$CONFIG_FILE" -r )"
+    AS_SYMBOLIC_LINK="$( Yq .\"symbolic-link\"[] "$CONFIG_FILE" )"
   fi
-  if [[ "$#AS_COPY" -eq 0 ]]
+  if [[ "${#AS_COPY}" -eq 0 ]]
   then
-    AS_COPY="$( command yq ".copy[]" "$CONFIG_FILE" -r )"
+    AS_COPY="$( Yq \".copy\"[] "$CONFIG_FILE" )"
   fi
 fi
 
