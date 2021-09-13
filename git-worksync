@@ -121,7 +121,7 @@ function symbolic_link() {
 
 function hard_link() {
   local WORKTREE="$1"
-  if [[ -f "$2" ]]
+  if [[ -f "$2" ]] || [[ -h "$2" ]]
   then
     ln2 "$WORKTREE" "$2"
     return $?
@@ -156,7 +156,7 @@ function list_worktree() {
 }
 
 function find_new_worktree() {
-  local NEW="$( echo "$2" | setdiff "$1" )"
+  local NEW="$( command echo "$2" | setdiff "$1" )"
   local COUNT=$( command echo "$NEW" | command wc -l )
   if [[ $COUNT -ne 1 ]]
   then
@@ -185,13 +185,13 @@ function match_strategy() {
 CONFIG_FILE="$(
   if [[ ! "$WORKSYNC_CONFIG" == "" ]]
   then
-    echo "$WORKSYNC_CONFIG"
+    command echo "$WORKSYNC_CONFIG"
     exit 0
   fi
   _CONFIG_FILE="$( git rev-parse --show-toplevel )/.worktree_sync.yml"
   if [[ -f "$_CONFIG_FILE" ]]
   then
-    echo "$_CONFIG_FILE"
+    command echo "$_CONFIG_FILE"
   fi
 )"
 declare -a ARGS
