@@ -226,6 +226,11 @@ done
 
 if [[ ! "$CONFIG_FILE" == "" ]]
 then
+  if ! command -v yq > /dev/null
+  then
+    echo "yq is required to load config file" 1>&2
+    exit 1 
+  fi
   if [[ "${#WORKTREE_SYNC_UNTRACKED}" -eq 0 ]]
   then
     WORKTREE_SYNC_UNTRACKED="$( Yq ".untracked" "$CONFIG_FILE" )"
