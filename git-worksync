@@ -1,0 +1,258 @@
+#!/bin/bash
+set -e
+
+function help() {
+command cat <<EOF 1>&2
+\`git worktree add\` with synchronizing untracked/ignored resources.
+Additional options are below.
+
+  -i=, --ignored=     The applying method for the ignored (default: symbolic-link)
+                      See METHODS section for the details.
+  -u=, --untracked=   The applying method for the ignored (default: symbolic-link)
+                      See METHODS section for the details.
+  -s=, --symbolic=, --symbolic-link=<path>
+                      Create symbolic link of a path.
+                      Specify multiple times for the multiple paths.
+  -h=, --hard=, --hard-link=<path>
+                      Create hard link of a file path or files under a directory path.
+                      Specify multiple times for the multiple paths.
+  --copy=<path>       Copy a path. Specify multiple times for the multiple paths.
+  --config=<path>     A yaml file that specifies the above options.
+                      The default value can be tweeked by an environmental variable,
+                      WORKTREE_SYNC_CONFIG which also defaults to ".worktree_sync.yml"
+                      in the path where .git exists.
+                      Available keys and expected values are below.
+                      * ignored (string)
+                      * untracked (string)
+                      * symbolic-link (array of strings)
+                      * hard-link (array of strings)
+                      The values are superceded by the above arguments.
+                      Require yq.
+  -h, --help          Show this help
+
+
+METHODS
+-------
+Available values are below.
+
+* hard-link|hard|h
+* symbolic-link|symbolic|s
+* cp
+* no
+
+The default values can be configured with the environmental variables.
+
+* WORKTREE_SYNC_IGNORED
+* WORKTREE_SYNC_UNTRACKED
+
+When using -s or -h, "no" is the highly recommended values for the above parameters.
+
+EOF
+return 1
+}
+
+function worktree_list() {
+  local PATTERN="^worktree\s+"
+  command git worktree list --porcelain \
+    | command grep -E "$PATTERN" \
+    | command sed -E -e "s/$PATTERN//g"
+}
+
+function relative() {
+  local PREFIX="$( git rev-parse --show-toplevel )"
+  for v in $( cat - ) 
+  do
+    echo "${v#${PREFIX}}/" | sed -e "s/^\///"
+  done
+}
+
+function setdiff() {
+  comm -1 -3 <( echo "$1" | sort ) <( sort - )
+}
+
+function retrieve_status() {
+  local PATTERN="^\\$1\s+"
+  local STATUS="$2"
+  local WORKTREE="$( worktree_list | relative )"
+  echo "$STATUS" \
+    | command grep -E "$PATTERN" \
+    | command sed -E -e "s/$PATTERN//g" \
+                     -e "s/^\.\//..\/$( command basename "$( command pwd )" )\//g" \
+    | setdiff "$WORKTREE" # exclude worktrees within a current worktree
+}
+
+function solve_link() {
+  local WORKTREE="$1"
+  local TARGET="$2"
+  echo "${WORKTREE}/$(
+    command echo "$TARGET" \
+      | command sed -E -e "s/^(\.\.\/)+//g" \
+                       -e 's/\/$//g'
+  )"
+}
+
+function copy() {
+  local LINK="$( solve_link "$@" )"
+  if [[ ! -e "$LINK" ]]
+  then
+    command cp -a "$2" "$LINK" 
+  fi
+}
+
+function ln2() {
+  local LINK="$( solve_link "$1" "$2" )"
+  local TARGET="$2"
+  shift 2
+  if [[ ! -e "$LINK" ]] && [[ ! -h "$LINK" ]]
+  then
+    command mkdir -p "$( dirname "$LINK" )"
+    command ln "$@" "$TARGET" "$LINK" 
+  fi
+}
+
+function symbolic_link() {
+  ln2 "$@" -s
+}
+
+function hard_link() {
+  local WORKTREE="$1"
+  if [[ -f "$2" ]]
+  then
+    ln2 "$WORKTREE" "$2"
+    return $?
+  fi
+  for TARGET in $( command find "$2" -type f )
+  do
+    ln2 "$WORKTREE" "$TARGET"
+  done
+}
+
+function sync() {
+  local CMD="$1"
+  local WORKTREE="$2"
+  shift 2
+  if [[ "$CMD" == "no" ]]
+  then
+    return 0
+  fi
+  for TARGET in $( echo $@ )
+  do
+    if [[ ! "$TARGET" == "" ]]
+    then
+      $CMD "$WORKTREE" "$TARGET"
+    fi
+  done
+}
+
+function list_worktree() {
+  command git worktree list --porcelain \
+    | command grep -E "^worktree\s+" \
+    | command sed -E -e "s/^worktree\s+//g"
+}
+
+function find_new_worktree() {
+  local NEW="$( echo "$2" | setdiff "$1" )"
+  local COUNT=$( command echo "$NEW" | command wc -l )
+  if [[ $COUNT -ne 1 ]]
+  then
+    command echo "There are $COUNT new worktrees, which is ambiguous." 1>&2
+    return 1
+  fi
+  command echo "$NEW"
+}
+
+function match_strategy() {
+  case "$1" in
+    "s" | "symbolic" | "symbolic_link" )
+      command echo "sync symbolic_link";;
+    "symbolic" ) command echo "$S";;
+    "symbolic-link" ) command echo "$S";;
+    "h" | "hard" | "hard-link" )
+      command echo "sync hard_link";;
+    "cp" ) command echo "sync copy";;
+    "no") command echo "sync no";;
+    "*" )
+      command echo "Invalid value for --untracked= or --ignored=" 1>&2
+      return 1;;
+  esac
+}
+
+CONFIG_FILE="$(
+  if [[ ! "$WORKTREE_SYNC_CONFIG" == "" ]]
+  then
+    echo "$WORKTREE_SYNC_CONFIG"
+    exit 0
+  fi
+  _CONFIG_FILE="$( git rev-parse --show-toplevel )/.worktree_sync.yml"
+  if [[ -f "$_CONFIG_FILE" ]]
+  then
+    echo "$_CONFIG_FILE"
+  fi
+)"
+declare -a ARGS
+declare -a AS_SYMBOLIC_LINK
+declare -a AS_HARD_LINK
+declare -a AS_COPY
+for ARG in "$@"
+do
+  VAL="${ARG#*=}"
+  case "$ARG" in
+    -h | --help ) help;;
+    -u=* | --untracked=* )
+      WORKTREE_SYNC_UNTRACKED="${VAL}";;
+    -i=* | --ignored=* )
+      WORKTREE_SYNC_IGNORED="${VAL}";;
+    -s=* | --symbolic=* | --symbolic-link=* )
+      AS_SYMBOLIC_LINK+=( "${VAL}" );;
+    -h=* | --hard=* | --hard-link=* )
+      AS_HARD_LINK+=( "${VAL}" );;
+    --copy=* )
+      AS_COPY+=( "${VAL}" );;
+    --config=* )
+      CONFIG_FILE="${VAL}";;
+    * )
+      ARGS+=( "$ARG" );;
+  esac
+done
+
+if [[ ! "$CONFIG_FILE" == "" ]]
+then
+  if [[ "$#WORKTREE_SYNC_UNTRACKED" -eq 0 ]]
+  then
+    WORKTREE_SYNC_UNTRACKED="$( command yq ".untracked" "$CONFIG_FILE" -r )"
+  fi 
+  if [[ "$#WORKTREE_SYNC_IGNORED" -eq 0 ]]
+  then
+    WORKTREE_SYNC_IGNORED="$( command yq ".ignored" "$CONFIG_FILE" -r )"
+  fi 
+  if [[ "$#AS_HARD_LINK" -eq 0 ]]
+  then
+    AS_HARD_LINK="$( command yq ".hard-link[]" "$CONFIG_FILE" -r )"
+  fi
+  if [[ "$#AS_HARD_LINK" -eq 0 ]]
+  then
+    AS_SYMBOLIC_LINK="$( command yq ".symbolic-link[]" "$CONFIG_FILE" -r )"
+  fi
+  if [[ "$#AS_COPY" -eq 0 ]]
+  then
+    AS_COPY="$( command yq ".copy[]" "$CONFIG_FILE" -r )"
+  fi
+fi
+
+Sync_untracked="$( match_strategy "${WORKTREE_SYNC_UNTRACKED:-h}" )"
+Sync_ignored="$( match_strategy "${WORKTREE_SYNC_IGNORED:-s}" )"
+
+OLD_LIST="$( list_worktree )"
+STATUS="$( command git status --ignored --porcelain=2 )"
+UNTRACKED="$( retrieve_status '?' "$STATUS" )" # Run before git worktree add to avoid false positives
+IGNORED="$( retrieve_status '!' "$STATUS" )"
+command git worktree add $ARGS
+NEW_LIST="$( list_worktree )"
+WORKTREE="$( find_new_worktree "$OLD_LIST" "$NEW_LIST" )"
+
+sync hard_link "$WORKTREE" $AS_HARD_LINK
+sync symbolic_link "$WORKTREE" $AS_SYMBOLIC_LINK
+sync copy "$WORKTREE" $AS_COPY
+$Sync_ignored "$WORKTREE" "$IGNORED"
+$Sync_untracked "$WORKTREE" "$UNTRACKED"
+
