@@ -25,9 +25,11 @@ This design has chosen for the following reasons.
 - Hard links are suitable for `git add <untracked paths>`
 - Symbolic links are suitable for synchronizing ignored directories (e.g., .venv/, data/, ...) after adding the new worktree.
 
-The behavior can be tweaked by command line options or by a YAML file.
+The behavior can be tweaked by command line options or by a YAML file (require [mikefarah/yq](https://github.com/mikefarah/yq)).
 The deafult path for the YAML file is `.worksync.yml` at the root of repository.
 However, it can also be changed by the `WORKSYNC_CONFIG` evironmental variable or by the `--config=<path>` option.
+
+Details are available from `git worksync --help`.
 
 ### Examples
 
