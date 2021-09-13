@@ -19,7 +19,7 @@ Additional options are below.
   --copy=<path>       Copy a path. Specify multiple times for the multiple paths.
   --config=<path>     A yaml file that specifies the above options.
                       The default value can be tweeked by an environmental variable,
-                      WORKTREE_SYNC_CONFIG which also defaults to ".worktree_sync.yml"
+                      WORKSYNC_CONFIG which also defaults to ".worksync.yml"
                       in the path where .git exists.
                       Available keys and expected values are below.
                       * ignored (string)
@@ -178,9 +178,9 @@ function match_strategy() {
 }
 
 CONFIG_FILE="$(
-  if [[ ! "$WORKTREE_SYNC_CONFIG" == "" ]]
+  if [[ ! "$WORKSYNC_CONFIG" == "" ]]
   then
-    echo "$WORKTREE_SYNC_CONFIG"
+    echo "$WORKSYNC_CONFIG"
     exit 0
   fi
   _CONFIG_FILE="$( git rev-parse --show-toplevel )/.worktree_sync.yml"
