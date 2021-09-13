@@ -14,9 +14,13 @@ function expect() {
 function test() {
   local NAME="$1"
   shift 1
-  if [[ ! "$( try "$@" )" == "$( expect $NAME )" ]]
+  TRY="$( try "$@" )"
+  EXPECT="$( expect $NAME )"
+  if [[ ! "$TRY" == "$EXPECT" ]]
   then
-    echo "failed: $NAME"
+    echo "=== failed: $NAME ===" 1>&2
+    echo '$ diff <( echo "$EXPECT" ) <( echo "$TRY" )' 1>&2
+    diff <( echo "$EXPECT" ) <( echo "$TRY" ) 1>&2
     FAILED=$(( $FAILED + 1 ))
   fi
   TESTED=$(( $TESTED + 1))
@@ -40,7 +44,7 @@ hard-link:
   - "ignored-file"
 EOF
 
-echo "Failed $FAILED / $TESTED"
+echo "Failed $FAILED / $TESTED" 1>&2
 if [[ FAILED -eq 0 ]]; then
   exit 0
 else
