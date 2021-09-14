@@ -20,7 +20,7 @@ function test() {
   then
     echo "=== failed: $NAME ===" 1>&2
     echo '$ diff <( echo "$EXPECT" ) <( echo "$TRY" )' 1>&2
-    diff <( echo "$EXPECT" ) <( echo "$TRY" ) 1>&2
+    diff <( echo "$EXPECT" ) <( echo "$TRY" ) 1>&2 || true
     FAILED=$(( $FAILED + 1 ))
   fi
   TESTED=$(( $TESTED + 1))
@@ -29,7 +29,7 @@ function test() {
 function update() {
   local NAME="$1"
   shift 1
-  try "$@" > "expected_${NAME}.txt"
+  try "$@" > "$WD/expected_${NAME}.txt"
 }
 
 $DO default
