@@ -183,7 +183,7 @@ function match_strategy() {
 }
 
 function Yq() {
-  command yq "$@" -r 2> /dev/null || true
+  command yq e "$@" 2> /dev/null || true
 }
 
 CONFIG_FILE="$(
