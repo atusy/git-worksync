@@ -27,10 +27,14 @@ jobs:
           case $MATRIX_OS in
             ubuntu-* ) BINARY="yq_linux_amd64";;
             macOS-* ) BINARY="yq_darwin_amd64";;
+          esac
           wget ${BASE_URL}/${VERSION}/${BINARY}.tar.gz -O - \
             | tar xz \
             && sudo mv ${BINARY} /usr/bin/yq
       - name: Run tests
         if: always()
-        run: bash tests/tests.bash
+        run:
+          - git config --global user.email "example@example.com"
+          - git config --global user.name "example"
+          - bash tests/tests.bash
   
