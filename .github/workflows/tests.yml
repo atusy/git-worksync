@@ -1,0 +1,42 @@
+on:
+  push:
+    branches: main
+  pull_request:
+    branches: main
+
+name: Tests
+
+jobs:
+  Tests:
+    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macOS-latest
+          - ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install yq 
+        env:
+          BASE_URL: "https://github.com/mikefarah/yq/releases/download"
+          VERSION: "v4.12.2"
+          MATRIX_OS: ${{ matrix.os }}
+        run: |
+          mkdir -p "$HOME/bin"
+          echo "$HOME/bin" >> "$GITHUB_PATH"
+          case $MATRIX_OS in
+            ubuntu-* ) BINARY="yq_linux_amd64";;
+            macOS-* ) BINARY="yq_darwin_amd64";;
+          esac
+          wget ${BASE_URL}/${VERSION}/${BINARY}.tar.gz -O - \
+            | tar xz \
+            && mv ${BINARY} "$HOME/bin/yq"
+      - name: Run tests
+        if: always()
+        run: |
+          git config --global user.email "example@example.com"
+          git config --global user.name "example"
+          bash tests/tests.bash
+  
