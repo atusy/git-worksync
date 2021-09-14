@@ -24,13 +24,15 @@ jobs:
           VERSION: "v4.12.2"
           MATRIX_OS: ${{ matrix.os }}
         run: |
+          mkdir -p "$HOME/bin"
+          echo "$HOME/bin" >> "$GITHUB_PATH"
           case $MATRIX_OS in
             ubuntu-* ) BINARY="yq_linux_amd64";;
             macOS-* ) BINARY="yq_darwin_amd64";;
           esac
           wget ${BASE_URL}/${VERSION}/${BINARY}.tar.gz -O - \
             | tar xz \
-            && sudo mv ${BINARY} /usr/bin/yq
+            && mv ${BINARY} "$HOME/bin/yq"
       - name: Run tests
         if: always()
         run: |
