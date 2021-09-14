@@ -3,6 +3,16 @@ set -e
 MAIN="$( mktemp -d )"
 WORKSYNC="$(cd "$( dirname $0 )/.." && pwd )/git-worksync"
 
+function Find() {
+  find \
+    -P . \
+    -type $1 \
+    -not -path "./.git/*" \
+    -not -path "./.git" \
+    -not -path "." \
+    -exec ls -F {} +
+}
+
 echo "$(
 cd $MAIN
 git init --initial-branch=main --quiet
@@ -31,11 +41,6 @@ git commit -m 'initial commit' --quiet
 git branch "test" --quiet
 $WORKSYNC test "$@" --quiet 1> /dev/null
 cd test
-find \
-  -P -type f,l \
-  -not -path "./.git/*" \
-  -not -path "./.git" \
-  -not -path "." \
-  -exec ls -F {} +
+cat <( Find f ) <( Find l )
 )"
 
