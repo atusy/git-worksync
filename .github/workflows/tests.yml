@@ -21,7 +21,7 @@ jobs:
       - name: Install yq 
         env:
           BASE_URL: "https://github.com/mikefarah/yq/releases/download"
-          VERSION: "4.12.2"
+          VERSION: "v4.12.2"
           MATRIX_OS: ${{ matrix.os }}
         run: |
           case $MATRIX_OS in
