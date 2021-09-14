@@ -57,7 +57,7 @@ if [[ "$#" -eq 0 ]]; then
 fi
 
 function worktree_list() {
-  local PATTERN="^worktree\s+"
+  local PATTERN="^worktree[[:space:]]+"
   command git worktree list --porcelain \
     | command grep -E "$PATTERN" \
     | command sed -E -e "s/$PATTERN//g"
@@ -76,7 +76,7 @@ function setdiff() {
 }
 
 function retrieve_status() {
-  local PATTERN="^\\$1\s+"
+  local PATTERN="^\\$1[[:space:]]+"
   local STATUS="$2"
   local WORKTREE="$( worktree_list | relative )"
   echo "$STATUS" \
@@ -151,8 +151,8 @@ function sync() {
 
 function list_worktree() {
   command git worktree list --porcelain \
-    | command grep -E "^worktree\s+" \
-    | command sed -E -e "s/^worktree\s+//g"
+    | command grep -E "^worktree[[:space:]]+" \
+    | command sed -E -e "s/^worktree[[:space:]]+//g"
 }
 
 function find_new_worktree() {
