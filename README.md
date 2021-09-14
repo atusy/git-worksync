@@ -4,8 +4,9 @@ Extend `git worktree add` by syncing untracked and ignored resouces.
 
 ## Install
 
+1. Install dependencies: [Git](https://git-scm.com/) and optionally [mikefarah/yq](https://github.com/mikefarah/yq). 
 1. Download [git-worksync](git-worksync) to one of your path (e.g., `~/.local/bin`)
-2. Let the file be executable
+1. Let the file be executable
 
 For example,
 
