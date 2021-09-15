@@ -244,15 +244,15 @@ then
   fi 
   if [[ "${#AS_HARD_LINK}" -eq 0 ]]
   then
-    AS_HARD_LINK="$( Yq .\"hard-link\"[] "$CONFIG_FILE" )"
+    AS_HARD_LINK+=( "$( Yq .\"hard-link\"[] "$CONFIG_FILE" )" )
   fi
   if [[ "${#AS_SYMBOLIC_LINK}" -eq 0 ]]
   then
-    AS_SYMBOLIC_LINK="$( Yq .\"symbolic-link\"[] "$CONFIG_FILE" )"
+    AS_SYMBOLIC_LINK+=( "$( Yq .\"symbolic-link\"[] "$CONFIG_FILE" )" )
   fi
   if [[ "${#AS_COPY}" -eq 0 ]]
   then
-    AS_COPY="$( Yq \".copy\"[] "$CONFIG_FILE" )"
+    AS_COPY+=( "$( Yq \".copy\"[] "$CONFIG_FILE" )" )
   fi
 fi
 
@@ -263,13 +263,13 @@ OLD_LIST="$( list_worktree )"
 STATUS="$( command git status --ignored --porcelain=2 )"
 UNTRACKED="$( retrieve_status '?' "$STATUS" )" # Run before git worktree add to avoid false positives
 IGNORED="$( retrieve_status '!' "$STATUS" )"
-command git worktree add $ARGS
+command git worktree add ${ARGS[@]}
 NEW_LIST="$( list_worktree )"
 WORKTREE="$( find_new_worktree "$OLD_LIST" "$NEW_LIST" )"
 
-sync hard_link "$WORKTREE" $AS_HARD_LINK
-sync symbolic_link "$WORKTREE" $AS_SYMBOLIC_LINK
-sync copy "$WORKTREE" $AS_COPY
+sync hard_link "$WORKTREE" ${AS_HARD_LINK[@]}
+sync symbolic_link "$WORKTREE" ${AS_SYMBOLIC_LINK[@]}
+sync copy "$WORKTREE" ${AS_COPY[@]}
 $Sync_ignored "$WORKTREE" "$IGNORED"
 $Sync_untracked "$WORKTREE" "$UNTRACKED"
 
