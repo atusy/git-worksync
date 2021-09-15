@@ -106,8 +106,8 @@ function copy() {
 
 function ln2() {
   local LINK="$( solve_link "$1" "$2" )"
-  local TARGET="$2"
-  shift 2
+  local TARGET="${3}/${2}"
+  shift 3 
   if [[ ! -e "$LINK" ]] && [[ ! -h "$LINK" ]]
   then
     command mkdir -p "$( dirname "$LINK" )"
@@ -121,14 +121,16 @@ function symbolic_link() {
 
 function hard_link() {
   local WORKTREE="$1"
-  if [[ -f "$2" ]] || [[ -h "$2" ]]
+  local TARGET0="$2"
+  shift 2
+  if [[ -f "$TARGET0" ]] || [[ -h "$TARGET0" ]]
   then
-    ln2 "$WORKTREE" "$2"
+    ln2 "$WORKTREE" "$TARGET0" "$@"
     return $?
   fi
-  for TARGET in $( command find "$2" -type f )
+  for TARGET in $( command find "$TARGET0" -type f )
   do
-    ln2 "$WORKTREE" "$TARGET"
+    ln2 "$WORKTREE" "$TARGET" "$@"
   done
 }
 
@@ -140,11 +142,12 @@ function sync() {
   then
     return 0
   fi
+  ROOT="$( git rev-parse --show-toplevel )"
   for TARGET in $( echo $@ )
   do
     if [[ ! "$TARGET" == "" ]]
     then
-      $CMD "$WORKTREE" "$TARGET"
+      $CMD "$WORKTREE" "$TARGET" "$ROOT"
     fi
   done
 }
