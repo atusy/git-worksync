@@ -171,7 +171,7 @@ function find_new_worktree() {
 
 function match_strategy() {
   case "$1" in
-    "s" | "symbolic" | "symbolic_link" )
+    "s" | "symbolic" | "symbolic-link" )
       command echo "sync symbolic_link";;
     "symbolic" ) command echo "$S";;
     "symbolic-link" ) command echo "$S";;
